@@ -15,7 +15,7 @@ import ru.edu.dto.User;
 // @TestInstance - жизненный цикл теста
 // PER_METHOD задан по умолчанию (можно не указывать). Объект создается при каждом методе
 @TestInstance(Lifecycle.PER_METHOD)
-class UserServiceTest {
+public class UserServiceTest {
 
 	private UserService userService;
 
