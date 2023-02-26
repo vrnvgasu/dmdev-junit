@@ -1,9 +1,13 @@
 package ru.edu.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Map;
 import java.util.Optional;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,7 +46,7 @@ public class UserServiceTest {
 		System.out.println("Test1: " + this);
 
 		var users = userService.getAll();
-		assertTrue(users.isEmpty(), () -> "User list should be empty");
+		assertTrue(users.isEmpty(), "User list should be empty");
 	}
 
 	@Test
@@ -51,7 +55,13 @@ public class UserServiceTest {
 		userService.add(IVAN);
 		userService.add(PETR);
 		var users = userService.getAll();
-		assertEquals(2, users.size());
+
+		//AssertJ - передали результат,
+		// а потом проверяем у него разные параметры
+		assertThat(users)
+				.hasSize(2);
+
+//		assertEquals(2, users.size());
 	}
 
 	@Test
@@ -59,8 +69,29 @@ public class UserServiceTest {
 		userService.add(IVAN);
 		Optional<User> maybeUser = userService.login(IVAN.getUsername(), IVAN.getPassword());
 
-		assertTrue(maybeUser.isPresent());
-		maybeUser.ifPresent(user -> assertEquals(IVAN, user));
+		//AssertJ
+		assertThat(maybeUser)
+				.isPresent();
+		maybeUser.ifPresent(user -> assertThat(user).isEqualTo(IVAN));
+
+//		assertTrue(maybeUser.isPresent());
+//		maybeUser.ifPresent(user -> assertEquals(IVAN, user));
+	}
+
+	@Test
+	void usersConvertedToMapById() {
+		userService.add(IVAN, PETR);
+		Map<Integer, User> users = userService.getAllConvertedById();
+
+		// junit
+		assertAll( // проверит все ассерты, даже если первый упадет
+				//AssertJ
+				() -> assertThat(users).containsKeys(IVAN.getId(), PETR.getId()),
+				() -> assertThat(users).containsValues(IVAN, PETR)
+		);
+
+		// Hamcrest. 2 параметра: результат и ожидаемый
+		MatcherAssert.assertThat(users, IsMapContaining.hasKey(IVAN.getId()));
 	}
 
 	@Test
