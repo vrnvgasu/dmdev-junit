@@ -3,6 +3,7 @@ package ru.edu.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,11 +18,15 @@ import ru.edu.dto.User;
 @TestInstance(Lifecycle.PER_METHOD)
 public class UserServiceTest {
 
+	private static final User IVAN = User.of(1, "Ivan", "123");
+
+	private static final User PETR = User.of(2, "Petr", "123");
+
 	private UserService userService;
 
 	@BeforeAll
 	static void init() { // название неважно
-	// void init() { можно не статический для Lifecycle.PER_CLASS
+		// void init() { можно не статический для Lifecycle.PER_CLASS
 		System.out.println("Before all: ");
 	}
 
@@ -32,7 +37,7 @@ public class UserServiceTest {
 	}
 
 	@Test
-	// название должно явно говорить, что происходит
+		// название должно явно говорить, что происходит
 	void usersEmptyIfNoUserAdded() {
 		System.out.println("Test1: " + this);
 
@@ -43,10 +48,35 @@ public class UserServiceTest {
 	@Test
 	void usersSizeIfUserAdded() {
 		System.out.println("Test2: " + this);
-		userService.add(new User());
-		userService.add(new User());
+		userService.add(IVAN);
+		userService.add(PETR);
 		var users = userService.getAll();
 		assertEquals(2, users.size());
+	}
+
+	@Test
+	void loginSuccessIfUserExist() {
+		userService.add(IVAN);
+		Optional<User> maybeUser = userService.login(IVAN.getUsername(), IVAN.getPassword());
+
+		assertTrue(maybeUser.isPresent());
+		maybeUser.ifPresent(user -> assertEquals(IVAN, user));
+	}
+
+	@Test
+	void loginFailedIfPasswordIsNotCorrect() {
+		userService.add(IVAN);
+		Optional<User> maybeUser = userService.login(IVAN.getUsername(), "dummy");
+
+		assertTrue(maybeUser.isEmpty());
+	}
+
+	@Test
+	void loginFailedIfUserDoesNotExist() {
+		userService.add(IVAN);
+		Optional<User> maybeUser = userService.login("dummy", IVAN.getPassword());
+
+		assertTrue(maybeUser.isEmpty());
 	}
 
 	@AfterEach
