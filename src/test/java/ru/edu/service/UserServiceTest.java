@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -21,6 +22,7 @@ import ru.edu.dto.User;
 // @TestInstance - жизненный цикл теста
 // PER_METHOD задан по умолчанию (можно не указывать). Объект создается при каждом методе
 @TestInstance(Lifecycle.PER_METHOD)
+//@Tag("login")
 public class UserServiceTest {
 
   private static final User IVAN = User.of(1, "Ivan", "123");
@@ -66,6 +68,7 @@ public class UserServiceTest {
   }
 
   @Test
+  @Tag("login")
   void loginSuccessIfUserExist() {
     userService.add(IVAN);
     Optional<User> maybeUser = userService.login(IVAN.getUsername(), IVAN.getPassword());
@@ -80,6 +83,8 @@ public class UserServiceTest {
   }
 
   @Test
+  @Tag("fast")
+  @Tag("user")
   void throwExceptionIfUserOrPasswordIsNull() {
 //		try {
 //			userService.login(null, "dummy");
@@ -118,6 +123,7 @@ public class UserServiceTest {
   }
 
   @Test
+  @Tag("login")
   void loginFailedIfPasswordIsNotCorrect() {
     userService.add(IVAN);
     Optional<User> maybeUser = userService.login(IVAN.getUsername(), "dummy");
@@ -126,6 +132,7 @@ public class UserServiceTest {
   }
 
   @Test
+  @Tag("login")
   void loginFailedIfUserDoesNotExist() {
     userService.add(IVAN);
     Optional<User> maybeUser = userService.login("dummy", IVAN.getPassword());

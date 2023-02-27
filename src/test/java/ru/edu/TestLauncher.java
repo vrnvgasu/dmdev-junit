@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TagFilter;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
@@ -24,6 +25,10 @@ public class TestLauncher {
 				// где будем искать тесты. Несколько вариантов:
 //				.selectors(DiscoverySelectors.selectClass(UserServiceTest.class))
 				.selectors(DiscoverySelectors.selectPackage("ru.edu.service"))
+				.filters(
+						// фильтрую по тегу
+						TagFilter.includeTags("login")
+				)
 				.build();
 
 		// запускаем тесты из request
