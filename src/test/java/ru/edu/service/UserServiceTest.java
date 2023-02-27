@@ -13,16 +13,25 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.TestMethodOrder;
 import ru.edu.dto.User;
 
 // @TestInstance - жизненный цикл теста
 // PER_METHOD задан по умолчанию (можно не указывать). Объект создается при каждом методе
 @TestInstance(Lifecycle.PER_METHOD)
 //@Tag("login")
+// порядок запуска методов в тесте
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class) // методом добавлять  @Order
+//@TestMethodOrder(MethodOrderer.MethodName.class) // в алфавитном порядке по названию
+//@TestMethodOrder(MethodOrderer.DisplayName.class) // в алфавитном порядке по @DisplayName
 public class UserServiceTest {
 
   private static final User IVAN = User.of(1, "Ivan", "123");
@@ -44,6 +53,8 @@ public class UserServiceTest {
   }
 
   @Test
+  @Order(2)
+  @DisplayName("users will be empty if no user added") // отображает в консоле название теста при выполнении
     // название должно явно говорить, что происходит
   void usersEmptyIfNoUserAdded() {
     System.out.println("Test1: " + this);
@@ -53,6 +64,7 @@ public class UserServiceTest {
   }
 
   @Test
+  @Order(1)
   void usersSizeIfUserAdded() {
     System.out.println("Test2: " + this);
     userService.add(IVAN);
@@ -67,20 +79,7 @@ public class UserServiceTest {
 //		assertEquals(2, users.size());
   }
 
-  @Test
-  @Tag("login")
-  void loginSuccessIfUserExist() {
-    userService.add(IVAN);
-    Optional<User> maybeUser = userService.login(IVAN.getUsername(), IVAN.getPassword());
 
-    //AssertJ
-    assertThat(maybeUser)
-        .isPresent();
-    maybeUser.ifPresent(user -> assertThat(user).isEqualTo(IVAN));
-
-//		assertTrue(maybeUser.isPresent());
-//		maybeUser.ifPresent(user -> assertEquals(IVAN, user));
-  }
 
   @Test
   @Tag("fast")
@@ -122,24 +121,6 @@ public class UserServiceTest {
     MatcherAssert.assertThat(users, IsMapContaining.hasKey(IVAN.getId()));
   }
 
-  @Test
-  @Tag("login")
-  void loginFailedIfPasswordIsNotCorrect() {
-    userService.add(IVAN);
-    Optional<User> maybeUser = userService.login(IVAN.getUsername(), "dummy");
-
-    assertTrue(maybeUser.isEmpty());
-  }
-
-  @Test
-  @Tag("login")
-  void loginFailedIfUserDoesNotExist() {
-    userService.add(IVAN);
-    Optional<User> maybeUser = userService.login("dummy", IVAN.getPassword());
-
-    assertTrue(maybeUser.isEmpty());
-  }
-
   @AfterEach
   void deleteDataFromDatabase() {
     System.out.println("After each: " + this);
@@ -149,6 +130,46 @@ public class UserServiceTest {
   static void closeConnectionPool() {
     // void closeConnectionPool() { можно не статический для Lifecycle.PER_CLASS
     System.out.println("After all: ");
+  }
+
+  // группируем тесты во внутреннем классе для повышения читаемости
+  @Tag("login")
+  @DisplayName("Test user login functionality")
+  @Nested // чтобы его было видно, как обычный класс
+  class LoginTest {
+    @Test
+//    @Tag("login")
+    void loginSuccessIfUserExist() {
+      userService.add(IVAN);
+      Optional<User> maybeUser = userService.login(IVAN.getUsername(), IVAN.getPassword());
+
+      //AssertJ
+      assertThat(maybeUser)
+          .isPresent();
+      maybeUser.ifPresent(user -> assertThat(user).isEqualTo(IVAN));
+
+//		assertTrue(maybeUser.isPresent());
+//		maybeUser.ifPresent(user -> assertEquals(IVAN, user));
+    }
+
+    @Test
+//    @Tag("login")
+    void loginFailedIfPasswordIsNotCorrect() {
+      userService.add(IVAN);
+      Optional<User> maybeUser = userService.login(IVAN.getUsername(), "dummy");
+
+      assertTrue(maybeUser.isEmpty());
+    }
+
+    @Test
+//    @Tag("login")
+    void loginFailedIfUserDoesNotExist() {
+      userService.add(IVAN);
+      Optional<User> maybeUser = userService.login("dummy", IVAN.getPassword());
+
+      assertTrue(maybeUser.isEmpty());
+    }
+
   }
 
 }
