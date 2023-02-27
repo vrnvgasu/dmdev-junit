@@ -19,10 +19,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import ru.edu.dto.User;
+import ru.edu.paramresolver.UserServiceParamResolver;
 
 // @TestInstance - жизненный цикл теста
 // PER_METHOD задан по умолчанию (можно не указывать). Объект создается при каждом методе
@@ -32,6 +35,9 @@ import ru.edu.dto.User;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // методом добавлять  @Order
 //@TestMethodOrder(MethodOrderer.MethodName.class) // в алфавитном порядке по названию
 //@TestMethodOrder(MethodOrderer.DisplayName.class) // в алфавитном порядке по @DisplayName
+@ExtendWith({ // добавляем функциональность в класс
+    UserServiceParamResolver.class // этот резолвер возвращает объект при DI UserService
+})
 public class UserServiceTest {
 
   private static final User IVAN = User.of(1, "Ivan", "123");
@@ -40,6 +46,12 @@ public class UserServiceTest {
 
   private UserService userService;
 
+  // конструкторы разрешили только в junit5
+  // Делает DI TestInfo (задан в дефолтном резолвере)
+  UserServiceTest(TestInfo testInfo) {
+    System.out.println();
+  }
+
   @BeforeAll
   static void init() { // название неважно
     // void init() { можно не статический для Lifecycle.PER_CLASS
@@ -47,9 +59,10 @@ public class UserServiceTest {
   }
 
   @BeforeEach
-  void prepare() { // название неважно
+  // DI UserService определили в UserServiceParamResolver
+  void prepare(UserService userService) { // название неважно
     System.out.println("Before each: " + this);
-    userService = new UserService();
+    this.userService = userService;
   }
 
   @Test
