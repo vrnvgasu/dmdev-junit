@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.AfterAll;
@@ -24,6 +25,17 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import ru.edu.dto.User;
 import ru.edu.paramresolver.UserServiceParamResolver;
 
@@ -59,7 +71,7 @@ public class UserServiceTest {
   }
 
   @BeforeEach
-  // DI UserService определили в UserServiceParamResolver
+    // DI UserService определили в UserServiceParamResolver
   void prepare(UserService userService) { // название неважно
     System.out.println("Before each: " + this);
     this.userService = userService;
@@ -67,7 +79,8 @@ public class UserServiceTest {
 
   @Test
   @Order(2)
-  @DisplayName("users will be empty if no user added") // отображает в консоле название теста при выполнении
+  @DisplayName("users will be empty if no user added")
+    // отображает в консоле название теста при выполнении
     // название должно явно говорить, что происходит
   void usersEmptyIfNoUserAdded() {
     System.out.println("Test1: " + this);
@@ -91,7 +104,6 @@ public class UserServiceTest {
 
 //		assertEquals(2, users.size());
   }
-
 
 
   @Test
@@ -150,6 +162,7 @@ public class UserServiceTest {
   @DisplayName("Test user login functionality")
   @Nested // чтобы его было видно, как обычный класс
   class LoginTest {
+
     @Test
 //    @Tag("login")
     void loginSuccessIfUserExist() {
@@ -183,6 +196,41 @@ public class UserServiceTest {
       assertTrue(maybeUser.isEmpty());
     }
 
+    // name - можем переопределить отображение тестов в консоле
+    @ParameterizedTest(name = "{arguments} test")
+//  @ArgumentsSource() // можем передавать несколько своих провайдеров данных
+    // для NullSource и EmptySource в тесте должно быть только один параметр
+//  @NullSource // встроенный провайдер данных NullArgumentsProvider
+//  @EmptySource // встроенный провайдер данных EmptyArgumentsProvider
+//  @NullAndEmptySource // объединяет NullArgumentsProvider и EmptyArgumentsProvider
+//    @ValueSource(strings = { // встроенный провайдер данных ValueArgumentsProvider
+//        "IVAN", "PETR"  // передаем по очереди параметры в переменную теста
+//    })
+//  @EnumSource   // провайдер EnumArgumentsProvider
+    @MethodSource("ru.edu.service.UserServiceTest#getArgumentsForLoginTest") // используется как провайдер чаще всего
+    // тянем данные из csc, но он не универсальный, тк объект уже через него не передашь
+//    @CsvFileSource(resources = "/login-test-data.csv", delimiter = ',', numLinesToSkip = 1)
+//    @CsvSource({ // тоже, что @CsvFileSource, но указываем строки вручную, а не через csv файл
+//        "Ivan,123",
+//        "Pert,123"
+//    })
+    @DisplayName("login param test")
+    void loginParametrizedTest(String username, String password/*, Optional<User> user*/) {
+      userService.add(IVAN, PETR);
+
+      Optional<User> maybeUser = userService.login(username, password);
+//      assertThat(user).isEqualTo(maybeUser);
+    }
+
+  }
+
+  static Stream<Arguments> getArgumentsForLoginTest() {
+    return Stream.of(
+        Arguments.of("Ivan", "123", Optional.of(IVAN)),
+        Arguments.of("Petr", "123", Optional.of(PETR)),
+        Arguments.of("Petr", "dummy", Optional.empty()),
+        Arguments.of("dummy", "123", Optional.empty())
+    );
   }
 
 }
