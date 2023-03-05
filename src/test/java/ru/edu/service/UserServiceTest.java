@@ -3,10 +3,14 @@ package ru.edu.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsMapContaining;
@@ -14,16 +18,20 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -161,7 +169,32 @@ public class UserServiceTest {
   @Tag("login")
   @DisplayName("Test user login functionality")
   @Nested // чтобы его было видно, как обычный класс
+  @Timeout(value = 200, unit = TimeUnit.MILLISECONDS) // ограничить по времени все тесты в классе
   class LoginTest {
+
+    @Test
+    @Timeout(value = 200, unit = TimeUnit.MILLISECONDS) // ограничить по времени весь тест
+    void checkLoginFunctionalityPerformance() {
+      System.out.println(Thread.currentThread().getName()); // main
+      var result1 = assertTimeout( // result - результат из нашей функциональности (тут User)
+          Duration.ofMillis(200L), // время, которое даем на выполнение
+          () -> { // тестируемая функциональность
+            System.out.println(Thread.currentThread().getName()); // main
+//            Thread.sleep(201L);
+            return userService.login(IVAN.getUsername(), IVAN.getPassword());
+          }
+      );
+
+      // assertTimeoutPreemptively запускает в отдельном потоке
+      var result2 = assertTimeoutPreemptively(
+          Duration.ofMillis(200L), // время, которое даем на выполнение
+          () -> { // тестируемая функциональность
+            System.out.println(Thread.currentThread().getName()); // junit-timeout-thread-1
+//            Thread.sleep(201L);
+            return userService.login(IVAN.getUsername(), IVAN.getPassword());
+          }
+      );
+    }
 
     @Test
 //    @Tag("login")
@@ -178,9 +211,12 @@ public class UserServiceTest {
 //		maybeUser.ifPresent(user -> assertEquals(IVAN, user));
     }
 
-    @Test
+    //    @Test
 //    @Tag("login")
-    void loginFailedIfPasswordIsNotCorrect() {
+    @RepeatedTest(value = 5)
+    // повторение теста
+    void loginFailedIfPasswordIsNotCorrect(RepetitionInfo repetitionInfo) {
+      System.out.println(repetitionInfo.getCurrentRepetition() + "/" + repetitionInfo.getTotalRepetitions());
       userService.add(IVAN);
       Optional<User> maybeUser = userService.login(IVAN.getUsername(), "dummy");
 
@@ -189,6 +225,8 @@ public class UserServiceTest {
 
     @Test
 //    @Tag("login")
+    @Disabled("flaky, need to see")
+      // не запускает тест
     void loginFailedIfUserDoesNotExist() {
       userService.add(IVAN);
       Optional<User> maybeUser = userService.login("dummy", IVAN.getPassword());
