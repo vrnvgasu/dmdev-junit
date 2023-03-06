@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -35,18 +36,14 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.junit.jupiter.params.provider.CsvFileSource;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.EmptySource;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.runner.RunWith;
+import ru.edu.TestBase;
 import ru.edu.dto.User;
-import ru.edu.paramresolver.UserServiceParamResolver;
+import ru.edu.extension.ConditionalExtension;
+import ru.edu.extension.GlobalExtension;
+import ru.edu.extension.PostProcessingExtension;
+import ru.edu.extension.ThrowableExtension;
+import ru.edu.extension.UserServiceParamResolver;
 
 // @TestInstance - жизненный цикл теста
 // PER_METHOD задан по умолчанию (можно не указывать). Объект создается при каждом методе
@@ -58,10 +55,14 @@ import ru.edu.paramresolver.UserServiceParamResolver;
 //@TestMethodOrder(MethodOrderer.DisplayName.class) // в алфавитном порядке по @DisplayName
 //@ExtendWith на смену @RunWith
 @ExtendWith({ // добавляем функциональность в класс
-    UserServiceParamResolver.class // этот резолвер возвращает объект при DI UserService
+    UserServiceParamResolver.class, // этот резолвер возвращает объект при DI UserService
+//    GlobalExtension.class // Можем наследовать расширения от родителя TestBase
+    PostProcessingExtension.class, // свой пример, как работает спринг
+    ConditionalExtension.class,
+    ThrowableExtension.class
 })
 //@RunWith() // добавляем функциональность. Обычно для фреймворков (спринг). Использовалось в junit4
-public class UserServiceTest {
+public class UserServiceTest extends TestBase {
 
   private static final User IVAN = User.of(1, "Ivan", "123");
 
@@ -102,7 +103,12 @@ public class UserServiceTest {
 
   @Test
   @Order(1)
-  void usersSizeIfUserAdded() {
+  void usersSizeIfUserAdded() throws IOException {
+    if (true) {
+      // ThrowableExtension игнорируем все, кроме IOException
+      throw new RuntimeException("ошибка, как пример для своего расширения ThrowableExtension");
+    }
+
     System.out.println("Test2: " + this);
     userService.add(IVAN);
     userService.add(PETR);

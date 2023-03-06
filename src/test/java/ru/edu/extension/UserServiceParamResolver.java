@@ -1,4 +1,4 @@
-package ru.edu.paramresolver;
+package ru.edu.extension;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
