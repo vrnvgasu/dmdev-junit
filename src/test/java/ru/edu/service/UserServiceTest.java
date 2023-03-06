@@ -44,6 +44,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.runner.RunWith;
 import ru.edu.dto.User;
 import ru.edu.paramresolver.UserServiceParamResolver;
 
@@ -55,9 +56,11 @@ import ru.edu.paramresolver.UserServiceParamResolver;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // методом добавлять  @Order
 //@TestMethodOrder(MethodOrderer.MethodName.class) // в алфавитном порядке по названию
 //@TestMethodOrder(MethodOrderer.DisplayName.class) // в алфавитном порядке по @DisplayName
+//@ExtendWith на смену @RunWith
 @ExtendWith({ // добавляем функциональность в класс
     UserServiceParamResolver.class // этот резолвер возвращает объект при DI UserService
 })
+//@RunWith() // добавляем функциональность. Обычно для фреймворков (спринг). Использовалось в junit4
 public class UserServiceTest {
 
   private static final User IVAN = User.of(1, "Ivan", "123");
