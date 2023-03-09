@@ -19,7 +19,7 @@ public class PostProcessingExtension implements TestInstancePostProcessor {
     // когда встречает аннотации, то что-нибудь делает или инжектит данные
     for (Field field: declaredFields) {
       if (field.isAnnotationPresent(Getter.class)) {
-        field.set(testInstance, new UserService());
+        field.set(testInstance, new UserService(null));
       }
     }
 

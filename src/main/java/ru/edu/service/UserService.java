@@ -6,11 +6,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import ru.edu.dao.UserDao;
 import ru.edu.dto.User;
 
 public class UserService {
 
+	private final UserDao userDao;
+
 	private final List<User> users = new ArrayList<>();
+
+	public UserService(UserDao userDao) {
+		this.userDao = userDao;
+	}
+
+	public boolean delete(Integer userId) {
+		return userDao.delete(userId);
+	}
 
 	public List<User> getAll() {
 		return users;

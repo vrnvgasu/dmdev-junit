@@ -4,6 +4,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import ru.edu.dao.UserDao;
 import ru.edu.service.UserService;
 
 public class UserServiceParamResolver implements ParameterResolver {
@@ -21,7 +22,7 @@ public class UserServiceParamResolver implements ParameterResolver {
 
     // кешируем объект. Возвращаем готовый или создаем объект при первом обращении по ключу
     var store = extensionContext.getStore(ExtensionContext.Namespace.create(UserService.class));
-    return store.getOrComputeIfAbsent(UserService.class, it -> new UserService());
+    return store.getOrComputeIfAbsent(UserService.class, it -> new UserService(new UserDao()));
 
     // создаем объект для каждого метода, в который делаем DI (тут ключ - название метода)
 //    var store = extensionContext.getStore(ExtensionContext.Namespace.create(extensionContext.getTestMethod()));

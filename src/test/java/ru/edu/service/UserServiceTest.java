@@ -37,7 +37,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 import ru.edu.TestBase;
+import ru.edu.dao.UserDao;
 import ru.edu.dto.User;
 import ru.edu.extension.ConditionalExtension;
 import ru.edu.extension.GlobalExtension;
@@ -59,7 +61,7 @@ import ru.edu.extension.UserServiceParamResolver;
 //    GlobalExtension.class // Можем наследовать расширения от родителя TestBase
     PostProcessingExtension.class, // свой пример, как работает спринг
     ConditionalExtension.class,
-    ThrowableExtension.class
+    //ThrowableExtension.class
 })
 //@RunWith() // добавляем функциональность. Обычно для фреймворков (спринг). Использовалось в junit4
 public class UserServiceTest extends TestBase {
@@ -69,6 +71,8 @@ public class UserServiceTest extends TestBase {
   private static final User PETR = User.of(2, "Petr", "123");
 
   private UserService userService;
+
+  private UserDao userDao;
 
   // конструкторы разрешили только в junit5
   // Делает DI TestInfo (задан в дефолтном резолвере)
@@ -86,7 +90,28 @@ public class UserServiceTest extends TestBase {
     // DI UserService определили в UserServiceParamResolver
   void prepare(UserService userService) { // название неважно
     System.out.println("Before each: " + this);
-    this.userService = userService;
+//    this.userService = userService;
+
+    this.userDao = Mockito.mock(UserDao.class);
+    this.userService = new UserService(this.userDao);
+  }
+
+  @Test
+  void shouldDeleteExistedUser() {
+    userService.add(IVAN);
+
+//    Mockito.doReturn(true).when(this.userDao).delete(IVAN.getId());
+    Mockito.doReturn(true).when(this.userDao).delete(Mockito.anyInt());
+    // другой вариант написания мока, но выше предпочтительнее
+//    Mockito.when(this.userDao.delete(Mockito.anyInt())).thenReturn(true);
+
+    // так можем несколько раз обратиться (указывает ответ на каждое обращение)
+//    Mockito.when(this.userDao.delete(Mockito.anyInt()))
+//        .thenReturn(true)
+//        .thenReturn(false);
+
+    var deleteResult = userService.delete(IVAN.getId());
+    assertThat(deleteResult).isTrue();
   }
 
   @Test
@@ -104,10 +129,10 @@ public class UserServiceTest extends TestBase {
   @Test
   @Order(1)
   void usersSizeIfUserAdded() throws IOException {
-    if (true) {
-      // ThrowableExtension игнорируем все, кроме IOException
-      throw new RuntimeException("ошибка, как пример для своего расширения ThrowableExtension");
-    }
+//    if (true) {
+//      // ThrowableExtension игнорируем все, кроме IOException
+//      throw new RuntimeException("ошибка, как пример для своего расширения ThrowableExtension");
+//    }
 
     System.out.println("Test2: " + this);
     userService.add(IVAN);
@@ -182,7 +207,8 @@ public class UserServiceTest extends TestBase {
   class LoginTest {
 
     @Test
-    @Timeout(value = 200, unit = TimeUnit.MILLISECONDS) // ограничить по времени весь тест
+    @Timeout(value = 200, unit = TimeUnit.MILLISECONDS)
+      // ограничить по времени весь тест
     void checkLoginFunctionalityPerformance() {
       System.out.println(Thread.currentThread().getName()); // main
       var result1 = assertTimeout( // result - результат из нашей функциональности (тут User)
