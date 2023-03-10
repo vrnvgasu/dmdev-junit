@@ -38,7 +38,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import ru.edu.TestBase;
 import ru.edu.dao.UserDao;
 import ru.edu.dto.User;
@@ -62,6 +66,7 @@ import ru.edu.extension.UserServiceParamResolver;
 //    GlobalExtension.class // Можем наследовать расширения от родителя TestBase
     PostProcessingExtension.class, // свой пример, как работает спринг
     ConditionalExtension.class,
+    MockitoExtension.class  // из mockito-junit-jupiter
     //ThrowableExtension.class
 })
 //@RunWith() // добавляем функциональность. Обычно для фреймворков (спринг). Использовалось в junit4
@@ -71,8 +76,15 @@ public class UserServiceTest extends TestBase {
 
   private static final User PETR = User.of(2, "Petr", "123");
 
+  @Captor
+  private ArgumentCaptor<Integer> argumentCaptor;
+
+  @InjectMocks // куда делаем DI моков (@Mock)
   private UserService userService;
 
+  // lenient - не кидать ошибку, если запланировали вызов метода у мока,
+  // но не вызвали - НЕ РЕКОМЕНДУЕТСЯ
+  @Mock(lenient = true) // создать до BeforeEach благодаря расширению MockitoExtension
   private UserDao userDao;
 
   // конструкторы разрешили только в junit5
@@ -91,11 +103,26 @@ public class UserServiceTest extends TestBase {
     // DI UserService определили в UserServiceParamResolver
   void prepare(UserService userService) { // название неважно
     System.out.println("Before each: " + this);
+
+    // запланировали перед каждым тестом вызов метода у мока.
+    // Кинет ошибку, если не вызвать.
+    // Можно подавить ошибку @Mock(lenient = true) - но не стоит так делать
+    Mockito.doReturn(true).when(userDao).delete(IVAN.getId());
+
 //    this.userService = userService;
 
+    // заменяем на @Mock из расширения MockitoExtension
 //    this.userDao = Mockito.mock(UserDao.class); // mock
-    this.userDao = Mockito.spy(new UserDao()); //spy
-    this.userService = new UserService(this.userDao);
+//    this.userDao = Mockito.spy(new UserDao()); //spy
+
+    // заменяем на @InjectMocks из расширения MockitoExtension
+//    this.userService = new UserService(this.userDao);
+  }
+
+  @Test
+  void throwExceptionIfDatabaseIsNotAvailable() {
+    Mockito.doThrow(RuntimeException.class).when(userDao).delete(IVAN.getId());
+    assertThrows(RuntimeException.class, () -> userService.delete(IVAN.getId()));
   }
 
   @Test
@@ -122,15 +149,16 @@ public class UserServiceTest extends TestBase {
     // Представим, что в сервисе создается какой-то параметр Integer,
     // который мы не можем из вне указать в вызове мока.
     // Но можем указать, что метод вызовется где-то внутри с объектом такого класса
-    var argumentCapture = ArgumentCaptor.forClass(Integer.class);
+    // заменили на @Captor из расширения MockitoExtension
+//    var argumentCaptor = ArgumentCaptor.forClass(Integer.class);
 
     // проверяем, что метод вызван 1 раз
-    Mockito.verify(userDao).delete(argumentCapture.capture());
+    Mockito.verify(userDao).delete(argumentCaptor.capture());
     // проверяем, что метод вызван 3 раза
 //    Mockito.verify(userDao, Mockito.times(3)).delete(IVAN.getId());
 
     // проверяем, что последнее значение прокинутое в метод мока равно тому-то
-    assertThat(argumentCapture.getValue()).isEqualTo(IVAN.getId());
+    assertThat(argumentCaptor.getValue()).isEqualTo(IVAN.getId());
 
     assertThat(deleteResult).isTrue();
   }
