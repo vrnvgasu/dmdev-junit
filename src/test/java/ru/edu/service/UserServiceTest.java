@@ -37,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import ru.edu.TestBase;
 import ru.edu.dao.UserDao;
@@ -92,7 +93,8 @@ public class UserServiceTest extends TestBase {
     System.out.println("Before each: " + this);
 //    this.userService = userService;
 
-    this.userDao = Mockito.mock(UserDao.class);
+//    this.userDao = Mockito.mock(UserDao.class); // mock
+    this.userDao = Mockito.spy(new UserDao()); //spy
     this.userService = new UserService(this.userDao);
   }
 
@@ -101,8 +103,10 @@ public class UserServiceTest extends TestBase {
     userService.add(IVAN);
 
 //    Mockito.doReturn(true).when(this.userDao).delete(IVAN.getId());
+    // подходит для spy
     Mockito.doReturn(true).when(this.userDao).delete(Mockito.anyInt());
     // другой вариант написания мока, но выше предпочтительнее
+    // не подходит для spy
 //    Mockito.when(this.userDao.delete(Mockito.anyInt())).thenReturn(true);
 
     // так можем несколько раз обратиться (указывает ответ на каждое обращение)
@@ -110,7 +114,24 @@ public class UserServiceTest extends TestBase {
 //        .thenReturn(true)
 //        .thenReturn(false);
 
+    // еще ни разу не дернули этот spy
+    Mockito.verifyNoInteractions(userDao);
+
     var deleteResult = userService.delete(IVAN.getId());
+
+    // Представим, что в сервисе создается какой-то параметр Integer,
+    // который мы не можем из вне указать в вызове мока.
+    // Но можем указать, что метод вызовется где-то внутри с объектом такого класса
+    var argumentCapture = ArgumentCaptor.forClass(Integer.class);
+
+    // проверяем, что метод вызван 1 раз
+    Mockito.verify(userDao).delete(argumentCapture.capture());
+    // проверяем, что метод вызван 3 раза
+//    Mockito.verify(userDao, Mockito.times(3)).delete(IVAN.getId());
+
+    // проверяем, что последнее значение прокинутое в метод мока равно тому-то
+    assertThat(argumentCapture.getValue()).isEqualTo(IVAN.getId());
+
     assertThat(deleteResult).isTrue();
   }
 
