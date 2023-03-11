@@ -38,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.BDDMockito;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -161,6 +162,11 @@ public class UserServiceTest extends TestBase {
     assertThat(argumentCaptor.getValue()).isEqualTo(IVAN.getId());
 
     assertThat(deleteResult).isTrue();
+
+    // Behavior Driven Development BDD
+    BDDMockito.given(userDao.delete(IVAN.getId())).willReturn(true);
+    // или
+    BDDMockito.willReturn(true).given(userDao).delete(IVAN.getId());
   }
 
   @Test
